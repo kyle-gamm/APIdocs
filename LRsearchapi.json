@@ -1,0 +1,624 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "LogRhythm Search API",
+    "description": "The following endpoints are available when using the LogRhythm Search API."
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "tags": [
+    {
+      "name": "Search API",
+      "description": "The Search API can be consumed to search logs/events using the below endpoints. The first endpoint Initiates search Search and returns TaskId and TaskStatus. Using the Task details returned from first endpoint, the second one returns indexed search result fetched from Web Indexer."
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Search",
+      "tags": [
+        "Search API"
+      ]
+    }
+  ],
+  "paths": {
+    "/actions/search-task": {
+      "x-swagger-router-controller": "search",
+      "post": {
+        "tags": [
+          "Search API"
+        ],
+        "consumes": [
+          "third party tool"
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Initiate Search",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "LogRhythm users can search logs/events using this endpoint. This endpoint Initates Search and returns TaskId and TaskStatus. The Task details returned from this endpoint will be used as an input for second endpoint (/actions/search-result).",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/search-task-request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return task result.",
+            "schema": {
+              "$ref": "#/definitions/search-task-response"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/actions/search-result": {
+      "x-swagger-router-controller": "search",
+      "post": {
+        "tags": [
+          "Search API"
+        ],
+        "consumes": [
+          "third party tool"
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "summary": "Search Result",
+        "parameters": [
+          {
+            "name": "SearchResultBody",
+            "in": "body",
+            "description": "This endpoint accepts TaskId as input and allows LogRhythm users to get indexed results from web indexer.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/search-result-request"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns indexed result.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/search-result-response"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "search-task-request": {
+      "type": "object",
+      "properties": {
+        "maxMsgsToQuery": {
+          "type": "integer",
+          "description": "Specifies how many results to be indexed"
+        },
+        "queryTimeout": {
+          "type": "integer",
+          "description": "Time interval for the search to time-out"
+        },
+        "searchMode": {
+          "type": "string",
+          "description": "Enumeration specifying paged\\grouped results by Date\\Risk fields order by ascending or descending. User should provide only integer value as an input.",
+          "enum": [
+            "MaxN = 0",
+            "Paged = 1",
+            "PagedSortedDateAsc = 2",
+            "PagedSortedDateDesc = 3",
+            "PagedSortedRiskAsc = 4",
+            "PagedSortedRiskDesc = 5"
+          ]
+        },
+        "dateCriteria": {
+          "$ref": "#/definitions/DateCriteria"
+        },
+        "queryLogSources": {
+          "type": "array",
+          "description": "Array of integers accepting Message Source Id's",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "logSourceIds": {
+          "type": "array",
+          "description": "Array of integers accepting log Source Id's",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "queryFilter": {
+          "$ref": "#/definitions/QueryFilter"
+        },
+        "queryEventManager": {
+          "type": "boolean",
+          "description": "if true then search events else search logs"
+        }
+      }
+    },
+    "search-result-request": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/search-result-request-data"
+        }
+      }
+    },
+    "search-result-request-data": {
+      "type": "object",
+      "properties": {
+        "searchGuid": {
+          "type": "string",
+          "description": "This is a GUID field. It accepts TaskId returned from first endpoint (search-task)"
+        },
+        "search": {
+          "$ref": "#/definitions/Search"
+        },
+        "paginator": {
+          "$ref": "#/definitions/Paginator"
+        }
+      }
+    },
+    "QueryFilter": {
+      "type": "object",
+      "properties": {
+        "msgFilterType": {
+          "type": "integer",
+          "description": "Values could be flatLegacy = 1, Grouped = 2. This field specifies if the search query is Grouped or not."
+        },
+        "filterGroup": {
+          "$ref": "#/definitions/FilterGroup"
+        }
+      }
+    },
+    "FilterGroup": {
+      "type": "object",
+      "properties": {
+        "filterItemType": {
+          "type": "integer",
+          "description": "Filter = 0 ; Group = 1; PolyList = 2. Specifies if the filter is a simple one, grouped item or a poly list."
+        },
+        "fieldOperator": {
+          "type": "integer",
+          "description": "None = 0; [And] = 1 ; [Or] = 2 ; AndPrevious = 3; OrPrevious = 4. The condition to be put amongst the field filters."
+        },
+        "filterMode": {
+          "type": "integer",
+          "description": "FilterIn = 1; FilterOut = 2. Specifies that the filter value is the supplied value or not."
+        },
+        "filterGroupOperator": {
+          "type": "integer",
+          "description": "And = 0; Or = 1. Operator to be applied among multiple filter groups."
+        },
+        "filterItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilterItems"
+          }
+        }
+      }
+    },
+    "FilterItems": {
+      "type": "object",
+      "properties": {
+        "filterItemType": {
+          "type": "integer",
+          "description": "Specifies if this is a group filter or simple filter. Possible values are Filter = 0 ; Group = 1; PolyList = 2."
+        },
+        "fieldOperator": {
+          "type": "integer",
+          "description": "Condition to be applied among the fields. Possible values could be- None = 0; [And] = 1 ; [Or] = 2 ; AndPrevious = 3; OrPrevious = 4."
+        },
+        "filterMode": {
+          "type": "integer",
+          "description": "Mode to be applied to the filter value. Possible values could be- FilterIn = 1; FilterOut = 2."
+        },
+        "filterType": {
+          "type": "integer",
+          "description": "The value of this filterType can be referred from FieldFilterTypeEnum"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Values"
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "Field Name"
+        }
+      }
+    },
+    "Values": {
+      "type": "object",
+      "properties": {
+        "filterType": {
+          "type": "string",
+          "description": "The value of this filterType can be referred from FieldFilterTypeEnum. User should provide only integer value as an input.",
+          "enum": [
+            "IDMGroupForAccount = 53",
+            "Address = 44",
+            "Amount = 64",
+            "Application = 97",
+            "MsgClass = 10",
+            "Command  = 112",
+            "CommonEvent = 11",
+            "Direction = 2",
+            "Duration  = 62",
+            "Group = 38",
+            "BytesIn = 58",
+            "BytesOut  = 59",
+            "BytesInOut = 95",
+            "DHost = 100",
+            "Host = 98",
+            "SHost = 99",
+            "ItemsIn = 60",
+            "ItemsOut = 61",
+            "ItemsInOut = 96",
+            "DHostName = 25",
+            "HostName = 23",
+            "SHostName = 24",
+            "KnownService = 16",
+            "DInterface = 108",
+            "Interface = 133",
+            "SInterface = 107",
+            "DIP = 19",
+            "IP = 17",
+            "SIP = 18",
+            "DIPRange = 22",
+            "IPRange = 20",
+            "SIPRange = 21",
+            "KnownDHost = 15",
+            "KnownHost = 13",
+            "KnownSHost = 14",
+            "Location = 87",
+            "SLocation = 85",
+            "DLocation = 86",
+            "MsgSource = 7",
+            "Entity = 6",
+            "RootEntity = 136",
+            "MsgSourceType = 9",
+            "DMAC = 104",
+            "MAC = 132",
+            "SMAC = 103",
+            "Message = 35",
+            "MPERule = 12",
+            "DNATIP = 106",
+            "NATIP = 126",
+            "SNATIP = 105",
+            "DNATIPRange = 125",
+            "NATIPRange = 127",
+            "SNATIPRange = 124",
+            "DNATPort = 115",
+            "NATPort = 130",
+            "SNATPort = 114",
+            "DNATPortRange = 129",
+            "NATPortRange = 131",
+            "SNATPortRange = 128",
+            "DNetwork = 50",
+            "Network = 51",
+            "SNetwork = 49",
+            "Object = 34",
+            "ObjectName = 113",
+            "Login = 29",
+            "IDMGroupForLogin = 52",
+            "Priority = 3",
+            "Process = 41",
+            "PID = 109",
+            "Protocol = 28",
+            "Quantity = 63",
+            "Rate = 65",
+            "Recipient = 32",
+            "Sender = 31",
+            "Session = 40",
+            "Severity = 110",
+            "Size = 66",
+            "Subject = 33",
+            "DPort = 27",
+            "Port = 45",
+            "SPort = 26",
+            "DPortRange = 47",
+            "PortRange = 48",
+            "SPortRange = 46",
+            "URL = 42",
+            "Account = 30",
+            "User = 43",
+            "IDMGroupForUser = 54",
+            "VendorMsgID = 37",
+            "Version = 111",
+            "SZone = 93",
+            "DZone = 94",
+            "FilterGroup = 1000",
+            "PolyListItem = 1001",
+            "Domain = 39",
+            "DomainOrigin = 137",
+            "Hash = 138",
+            "Policy = 139",
+            "VendorInfo = 140",
+            "Result = 141",
+            "ObjectType = 142",
+            "CVE = 143",
+            "UserAgent = 144",
+            "ParentProcessId = 145",
+            "ParentProcessName = 146",
+            "ParentProcessPath = 147",
+            "SerialNumber = 148",
+            "Reason = 149",
+            "Status = 150",
+            "ThreatId = 151",
+            "ThreatName = 152",
+            "SessionType = 153",
+            "Action = 154",
+            "ResponseCode = 155",
+            "UserOriginIdentityID = 167",
+            "Identity = 160",
+            "UserImpactedIdentityID = 168",
+            "SenderIdentityID = 169",
+            "RecipientIdentityID = 170"
+          ]
+        },
+        "valueType": {
+          "type": "string",
+          "description": "The value of this valueType can be referred from FieldFilterValueTypeEnum. User should provide only integer value as an input.",
+          "enum": [
+            "Byte = 0",
+            "Int16 = 1",
+            "Int32 = 2",
+            "Int64 = 3",
+            "String = 4",
+            "IPAddress = 5",
+            "IPAddressrange = 6",
+            "TimeOfDay = 7",
+            "DateRange = 8",
+            "PortRange = 9",
+            "Quantity = 10",
+            "ListReference = 11",
+            "ListSet = 12",
+            "Null = 13",
+            "INVALID = 99"
+          ]
+        },
+        "value": {
+          "$ref": "#/definitions/Value"
+        },
+        "displayValue": {
+          "type": "string",
+          "description": "User must supply value for a particular filter. If user provided ValueType as Int16, Int32 or Int64 then Value can be any positive integer value. If ValueType is string then the value need to be provide in format as {value:1, matchtype:2}. If ValueType = PortRange or IPAddressrange then value should be as {start:xx, end:yy}. If ValueType is Quantity then value should be provided as {operator:\"=\", value:xyz}"
+        }
+      }
+    },
+    "Value": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "User supplied value"
+        },
+        "matchType": {
+          "type": "integer",
+          "description": "Value = 0; SQLPattern = 1; Regex = 2"
+        }
+      }
+    },
+    "DateCriteria": {
+      "type": "object",
+      "properties": {
+        "dateMin": {
+          "type": "string",
+          "description": "Start Date. Sample date format is \"YYYY-MM-DDTHH:mm:ssZ\"."
+        },
+        "dateMax": {
+          "type": "string",
+          "description": "End Date. Sample date format is \"YYYY-MM-DDTHH:mm:ssZ\"."
+        },
+        "useInsertedDate": {
+          "type": "boolean",
+          "description": "This is not mandatory field. If user wants to use dateMax and dateMin then set true and if user wants to set internal values the set it with false."
+        },
+        "lastIntervalValue": {
+          "type": "integer",
+          "description": "If last interval value is supplied, dateMin and dateMax are not going to be considered."
+        },
+        "lastIntervalUnit": {
+          "type": "string",
+          "description": "Specifies the enum values as below. It is applied with lastIntervalValue field. User should provide only integer value as an input.",
+          "enum": [
+            "Year = 0",
+            "Quarter = 1",
+            "Month = 2",
+            "DayOfYear = 3",
+            "Day = 4",
+            "WeekOfYear = 5",
+            "Weekday = 6",
+            "Hour = 7",
+            "Minute = 8",
+            "Second = 9"
+          ]
+        }
+      }
+    },
+    "search-task-response": {
+      "type": "object",
+      "properties": {
+        "taksId": {
+          "type": "integer",
+          "description": "TaskId returned from database for the current search. This is actually Search GUID."
+        },
+        "taskStatus": {
+          "type": "string",
+          "description": "TaskStatus returned from database for the current search. Possible values could be - Searching, First Results, Queued, Paused, Completed':' No Results, Completed':' Max Results, Completed':' All Results, Completed':' Partial Results, Search Failed, Search Cancelled."
+        },
+        "responseMessage": {
+          "type": "string",
+          "description": "Describes if the search is success or failed. Also, any unhandled exception will be shown here."
+        },
+        "statusMessage": {
+          "type": "string",
+          "description": "Describes if the search is a success or failure."
+        },
+        "statusCode": {
+          "type": "integer",
+          "description": "Standard status code returned from API. Possible values could be 200, 400, 415, 500 etc."
+        }
+      }
+    },
+    "Search": {
+      "type": "object",
+      "properties": {
+        "sort": {
+          "type": "array",
+          "description": "Can be empty array [] or valid values - Can not be null, Can not be removed - Mandatory",
+          "items": {
+            "$ref": "#/definitions/Sort"
+          }
+        },
+        "fields": {
+          "type": "array",
+          "description": "Can be null or [] empty array, or valid values and fields can be removed - Not Mandatory. comma separated field names followed by KeyField",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Paginator": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "integer",
+          "description": "Page Number. Accepts 0 and max integer value"
+        },
+        "page_size": {
+          "type": "integer",
+          "description": "Page Size. Must be greater than 0"
+        }
+      }
+    },
+    "Sort": {
+      "type": "object",
+      "properties": {
+        "fieldName": {
+          "type": "string",
+          "description": "any field name goes here"
+        },
+        "order": {
+          "type": "string",
+          "description": "asc or desc"
+        }
+      }
+    },
+    "search-result-response": {
+      "type": "object",
+      "properties": {
+        "statusCode": {
+          "type": "integer",
+          "description": "Standard status code returned from API. Possible values could be 200, 400, 415, 500 etc."
+        },
+        "statusMessage": {
+          "type": "string",
+          "description": "Describes if the search is a success or failure."
+        },
+        "responseMessage": {
+          "type": "string",
+          "description": "Describes if the search is success or failed. Also, any unhandled exception will be shown here."
+        },
+        "allLogsCount": {
+          "type": "integer",
+          "description": "All logs count returned from Web Indexer."
+        },
+        "filteredLogsCount": {
+          "type": "integer",
+          "description": "Filtered logs count returned from Web Indexer."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Items"
+          }
+        }
+      }
+    },
+    "Items": {
+      "type": "object",
+      "description": "The indexed result object array returned from Web Indexer."
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "responseMessage": {
+          "type": "string",
+          "description": "Describes if the search is success or failed. Also, any unhandled exception will be shown here."
+        },
+        "statusMessage": {
+          "type": "string",
+          "description": "Describes if the search is a success or failure."
+        },
+        "statusCode": {
+          "type": "integer",
+          "description": "Standard status code returned from API. Possible values could be 200, 400, 415, 500 etc."
+        }
+      }
+    }
+  }
+}

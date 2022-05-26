@@ -1,0 +1,239 @@
+swagger: '2.0'
+info:
+  title: LogRhythm AIE Drill Down API
+  description: The following endpoints are available for the LogRhythm AIE Drilldown service.
+schemes:
+  - https
+produces:
+  - application/json
+paths:
+  '/drilldown/{alarmID}':
+    get:
+      operationId: getDrilldownLogsAndSummary
+      security:
+        - basicAuth: []
+      summary: Get Drill-Down Logs and Summary
+      description: >
+        This endpoint returns drill-down logs per rule block for
+        a specific alarm Id that fired associated with an AIE alarm. The metadata for each
+        rule block includes the rule block Id, number of logs triggered for the
+        rule block as identified by the AI Engine, number of logs for the
+        rule block stored in the Data Indexer (DX), the Summary Field type, and a summary based on the Summary field type. This endpoint is used for alarm notifications.
+      parameters:
+        - $ref: '#/parameters/alarmID'
+      responses:
+        '202':
+          description: Returns drill-down logs and aggregate counts for the triggered alarm.
+          schema:
+            $ref: '#/definitions/DrilldownLogsAndSummary'
+        '204':
+          description: Drill-down logs and summary not found for the alarm Id.
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/ErrorObject'
+  '/drilldown/{alarmID}/summary':
+    get:
+      operationId: getDrilldownSummary
+      security:
+        - basicAuth: []
+      summary: Get Drill-Down Summary
+      description: >
+        This endpoint returns drill-down summary information per rule block for
+        a specific alarm Id that fired associated with an AIE alarm.
+        The Summary Field type and the aggregate counts for the Summary Field type are displayed.
+      parameters:
+        - $ref: '#/parameters/alarmID'
+      responses:
+        '200':
+          description: Returns a drill-down summary for the triggered alarm.
+          schema:
+            $ref: '#/definitions/DrilldownSummary'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/ErrorObject'
+
+parameters:
+  alarmID:
+    in: path
+    name: alarmID
+    required: true
+    type: number
+    description: An alarm Id to initiate an AI Engine drill down.
+
+
+definitions:
+  Status:
+    type: integer
+    enum:
+      - value: 0
+        name: NQ
+        description: The drill-down request is not queued yet.
+      - value: 1
+        name: Q
+        description: The drill-down request is queued.
+      - value: 2
+        name: SentToSH
+        description: The drill-down request is sent to the Services Host to get drill-down logs.
+      - value: 3
+        name: R
+        description: The drill-down response is not complete and is requeued.
+      - value: 4
+        name: C
+        description: The drill-down response is complete.
+
+  SummaryWeb:
+    type: object
+    properties:
+      SummaryFieldType:
+        type: string
+        description: A mapping of Summary Field type.
+      DrillDownSummaries:
+        type: string
+        description: A set of log counts based on the Summary Field criteria.
+
+  SummaryObject:
+    type: object
+    properties:
+      SummaryFieldType:
+        type: number
+        description: The Summary Field type selected for the rule block.
+      DrillDownSummaries:
+        type: string
+        description: The aggregate of the Summary Field type as found in the drill-down logs associated with the alarm.
+      DefaultValue:
+        type: string
+        description: The value populated from the ARM when an alarm is added to the cache. This value is used to populate group-by fields ONLY when sending notifications in the absence of DrilldownSummaries.
+
+  SummaryRuleBlocks:
+    properties:
+      RuleBlockID:
+        type: number
+        description: >-
+          The Rule Block Id associated with the AI Engine rule that triggered the alarm.
+      DDSummaries:
+        type: array
+        items:
+          $ref: '#/definitions/SummaryWeb'
+  LogRuleBlocks:
+    properties:
+      RuleBlockID:
+        type: number
+        description: >-
+          The Rule Block Id associated with the AI Engine rule that triggered the alarm.
+      RuleBlockTypeID:
+        type: number
+        description: >-
+          The type of rule block as specified in the Events Msg XML.
+      DrillDownLogs:
+        type: array
+        items:
+          type: string
+          description: >-
+            Logs that triggered the AI Engine rule associated with the rule block.
+      AIECount:
+        type: number
+        description: The number of logs identified by the AI Engine that triggered the alarm.
+      DXCount:
+        type: number
+        description: >-
+          The number of logs stored in the Data Indexer that matched the drill-down criteria.
+      NormalMessageDate:
+        type: string
+        format: date
+        description: >-
+          This field contains the date, in UTC, that specifies the time of occurence of the log.
+      NormalMessageDateUpper:
+        type: string
+        format: date
+        description: >-
+          This field contains the date, in UTC, that specifies the upper bound for the rule block triggered.
+      NormalMessageDateLower:
+        type: string
+        format: date
+        description: >-
+          This field contains the date, in UTC, that specifies the lower bound for the rule block triggered.
+      DDSummaries:
+        type: array
+        items:
+          $ref: '#/definitions/SummaryObject'
+
+  DrilldownLogsAndSummaryCommonBlock:
+    properties:
+      AlarmID:
+        type: number
+        description: The alarm associated with the drill down.
+      AIERuleID:
+        type: number
+        description: AI Engine rule Id associated with the triggered alarm.
+      Status:
+        $ref: '#/definitions/Status'
+      RetryCount:
+        type: number
+        description: >-
+          The number of times the Data Indexer is queried for the drill-down results.
+      LastDxTimestamp:
+        type: string
+        format: date
+        description: >-
+          This field contains the timestamp, in UTC, at which the Data
+          Indexer was queried to obtain the drill-down results.
+      DateInserted:
+        type: string
+        format: date
+        description: >-
+          This field contains the timestamp, in UTC, when the Alarm was added to the cache.
+      AlarmGuid:
+        type: string
+        format: uuid
+        description: The unique identification of the Alarm GUID. This value is set when an alarm is first inserted to the AIE Drilldown Cache.
+      WebConsoleId:
+        type: string
+        format: uuid
+        description: The unique identification of the Alarm GUID.
+      NotificationSent:
+        type: boolean
+        description: A flag indicating the status of notification sent for the alarm.
+      AIEMsgXml:
+        type: string
+        description: >-
+          The message XML associated with the event that triggered by the AI Engine.
+      EventID:
+        type: number
+        description: >-
+          The event ID associated with the AI Engine alarm.
+      NormalMessageDate:
+        type: string
+        format: date
+        description: >-
+          This field contains the date, in UTC, that specifies the time of
+          occurence of the log.
+      RuleBlocks:
+        $ref: '#/definitions/LogRuleBlocks'
+
+  DrilldownSummary:
+    type: object
+    properties:
+      DrilldownSummary:
+        $ref: '#/definitions/SummaryRuleBlocks'
+
+  DrilldownLogsAndSummary:
+    type: object
+    properties:
+      DrillDownResults:
+        $ref: '#/definitions/DrilldownLogsAndSummaryCommonBlock'
+
+  ErrorObject:
+    properties:
+      statusCode:
+        type: integer
+        description: The HTTP status code associated with the error.
+      name:
+        type: string
+        description: The HTTP message associated with the HTTP status code.
+      message:
+        type: string
+        description: >-
+          A description of the error returned by AI Engine. This field can contain
+          one or more error messages.
